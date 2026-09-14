@@ -1,0 +1,400 @@
+{
+  "info": {
+    "_postman_id": "9b1287e1-884b-4ec9-bf4b-campusfix2026",
+    "name": "CampusFix - Smart Campus Maintenance API Collection",
+    "description": "Comprehensive REST API test suite for CampusFix: Authentication, Role-based Complaints CRUD, Staff Management CRUD, Priority Detection Heuristic, Duplicate Warning, and Analytics.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://127.0.0.1:8000/api",
+      "type": "string"
+    },
+    {
+      "key": "authToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "complaintId",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "staffId",
+      "value": "1",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Authentication",
+      "item": [
+        {
+          "name": "Login - Student",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"student@campusfix.edu\",\n  \"password\": \"Student@123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login/",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "login", ""]
+            },
+            "description": "Authenticates student and returns Auth Token."
+          }
+        },
+        {
+          "name": "Login - Admin",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@campusfix.edu\",\n  \"password\": \"Admin@123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login/",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "login", ""]
+            },
+            "description": "Authenticates admin and returns Auth Token."
+          }
+        },
+        {
+          "name": "Register New Student",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Rohan Sharma\",\n  \"email\": \"rohan@campusfix.edu\",\n  \"password\": \"Rohan@123\",\n  \"confirm_password\": \"Rohan@123\",\n  \"role\": \"STUDENT\",\n  \"department\": \"Information Technology\",\n  \"phone\": \"+1-555-0921\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/register/",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "register", ""]
+            },
+            "description": "Registers a new student user and returns token."
+          }
+        },
+        {
+          "name": "Get Current User Profile",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Token {{authToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/me/",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "me", ""]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Complaints CRUD",
+      "item": [
+        {
+          "name": "READ - Get All Complaints (Filtered)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Token {{authToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/complaints/?category=Electrical&status=Submitted",
+              "host": ["{{baseUrl}}"],
+              "path": ["complaints", ""],
+              "query": [
+                { "key": "category", "value": "Electrical" },
+                { "key": "status", "value": "Submitted" }
+              ]
+            },
+            "description": "Fetches complaints matching filters. Admins see all, students see their own."
+          }
+        },
+        {
+          "name": "READ - Get Single Complaint by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Token {{authToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/complaints/{{complaintId}}/",
+              "host": ["{{baseUrl}}"],
+              "path": ["complaints", "{{complaintId}}", ""]
+            }
+          }
+        },
+        {
+          "name": "CREATE - Submit New Complaint (Valid)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Token {{authToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"complaint_title\": \"Water leakage in Central Library washroom\",\n  \"description\": \"Continuous water leakage from ceiling pipe onto the floor causing slip hazard.\",\n  \"category\": \"Plumbing\",\n  \"location\": \"Central Library, 1st Floor Restroom\",\n  \"priority\": \"High\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/complaints/",
+              "host": ["{{baseUrl}}"],
+              "path": ["complaints", ""]
+            }
+          }
+        },
+        {
+          "name": "CREATE - Invalid Complaint (Missing Title & Description)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Token {{authToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"category\": \"Electrical\",\n  \"location\": \"Block A\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/complaints/",
+              "host": ["{{baseUrl}}"],
+              "path": ["complaints", ""]
+            },
+            "description": "Expected 400 Bad Request with validation errors."
+          }
+        },
+        {
+          "name": "UPDATE - Edit Complaint Details (Student / Admin)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Token {{authToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"complaint_title\": \"Updated: Severe water leakage in Central Library washroom\",\n  \"priority\": \"Critical\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/complaints/{{complaintId}}/",
+              "host": ["{{baseUrl}}"],
+              "path": ["complaints", "{{complaintId}}", ""]
+            }
+          }
+        },
+        {
+          "name": "UPDATE - Assign Maintenance Staff (Admin)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Token {{authToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"staff_id\": {{staffId}}\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/complaints/{{complaintId}}/assign_staff/",
+              "host": ["{{baseUrl}}"],
+              "path": ["complaints", "{{complaintId}}", "assign_staff", ""]
+            }
+          }
+        },
+        {
+          "name": "UPDATE - Update Status to In Progress / Resolved",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Token {{authToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"Resolved\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/complaints/{{complaintId}}/update_status/",
+              "host": ["{{baseUrl}}"],
+              "path": ["complaints", "{{complaintId}}", "update_status", ""]
+            }
+          }
+        },
+        {
+          "name": "DELETE - Delete Complaint",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Token {{authToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/complaints/{{complaintId}}/",
+              "host": ["{{baseUrl}}"],
+              "path": ["complaints", "{{complaintId}}", ""]
+            }
+          }
+        },
+        {
+          "name": "DELETE - Negative Test (Invalid ID)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Token {{authToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/complaints/999999/",
+              "host": ["{{baseUrl}}"],
+              "path": ["complaints", "999999", ""]
+            },
+            "description": "Expected 404 Not Found."
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Smart Features & Analytics",
+      "item": [
+        {
+          "name": "Analytics Dashboard Summary",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Token {{authToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/complaints/analytics/",
+              "host": ["{{baseUrl}}"],
+              "path": ["complaints", "analytics", ""]
+            }
+          }
+        },
+        {
+          "name": "Smart Priority Detection Heuristic",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Token {{authToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Live electric wire sparking in corridor\",\n  \"description\": \"There is fire and emergency smoke coming from the power panel.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/complaints/detect_priority/",
+              "host": ["{{baseUrl}}"],
+              "path": ["complaints", "detect_priority", ""]
+            },
+            "description": "Tests emergency heuristic keyword detection returning Critical priority."
+          }
+        },
+        {
+          "name": "Smart Duplicate Issue Check",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Token {{authToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/complaints/check_duplicate/?category=Electrical&location=Technology Block C, 3rd Floor, Lab 304&title=sparking wire",
+              "host": ["{{baseUrl}}"],
+              "path": ["complaints", "check_duplicate", ""],
+              "query": [
+                { "key": "category", "value": "Electrical" },
+                { "key": "location", "value": "Technology Block C, 3rd Floor, Lab 304" },
+                { "key": "title", "value": "sparking wire" }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Maintenance Staff CRUD",
+      "item": [
+        {
+          "name": "READ - List All Staff",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Token {{authToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/staff/",
+              "host": ["{{baseUrl}}"],
+              "path": ["staff", ""]
+            }
+          }
+        },
+        {
+          "name": "CREATE - Register Maintenance Staff",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Token {{authToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Arthur Pendelton\",\n  \"email\": \"arthur.pendelton@campusfix.edu\",\n  \"phone\": \"+1-555-0812\",\n  \"department\": \"Civil & Structural\",\n  \"specialization\": \"Roofing & Concrete Repairs\",\n  \"availability\": \"Available\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/staff/",
+              "host": ["{{baseUrl}}"],
+              "path": ["staff", ""]
+            }
+          }
+        },
+        {
+          "name": "UPDATE - Update Staff Availability",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Token {{authToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"availability\": \"Busy\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/staff/{{staffId}}/",
+              "host": ["{{baseUrl}}"],
+              "path": ["staff", "{{staffId}}", ""]
+            }
+          }
+        },
+        {
+          "name": "DELETE - Delete Staff Member",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Token {{authToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/staff/{{staffId}}/",
+              "host": ["{{baseUrl}}"],
+              "path": ["staff", "{{staffId}}", ""]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
